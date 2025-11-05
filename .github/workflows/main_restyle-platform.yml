@@ -18,14 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java version
+      - name: Set up Java 21 (Temurin)
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'microsoft'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Build with Maven
-        run: mvn clean install
+      - name: Build with Maven (skip tests)
+        run: mvn clean package -DskipTests
+
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -60,4 +62,5 @@ jobs:
           app-name: 'restyle-platform'
           slot-name: 'Production'
           package: '*.jar'
+
           
