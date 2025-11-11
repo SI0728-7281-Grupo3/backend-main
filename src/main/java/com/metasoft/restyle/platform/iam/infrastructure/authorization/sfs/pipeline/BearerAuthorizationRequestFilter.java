@@ -29,7 +29,6 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(BearerAuthorizationRequestFilter.class);
     private final BearerTokenService tokenService;
 
-
     @Qualifier("defaultUserDetailsService")
     private final UserDetailsService userDetailsService;
 
@@ -38,30 +37,35 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * This method is responsible for filtering requests and setting the user authentication.
-     * @param request The request object.
-     * @param response The response object.
-     * @param filterChain The filter chain object.
-     */
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            String path = request.getServletPath();
+            if (path.startsWith("/api/v1/authentication") ||
+                    path.startsWith("/v3/api-docs") ||
+                    path.startsWith("/swagger") ||
+                    path.startsWith("/webjars")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String token = tokenService.getBearerTokenFrom(request);
-            LOGGER.info("Token: {}", token);
             if (token != null && tokenService.validateToken(token)) {
                 String username = tokenService.getUsernameFromToken(token);
                 var userDetails = userDetailsService.loadUserByUsername(username);
-                SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+                SecurityContextHolder.getContext()
+                        .setAuthentication(UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
             } else {
-                LOGGER.info("Token is not valid");
+                LOGGER.info("No valid token found for request: {}", path);
             }
 
         } catch (Exception e) {
             LOGGER.error("Cannot set user authentication: {}", e.getMessage());
         }
+
         filterChain.doFilter(request, response);
     }
 }
