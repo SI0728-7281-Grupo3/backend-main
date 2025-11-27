@@ -49,18 +49,38 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            String authHeader = request.getHeader("Authorization");
+            LOGGER.info("Authorization header: {}", authHeader != null ? "Present" : "Missing");
+            LOGGER.info("Request URI: {}", request.getRequestURI());
+            
             String token = tokenService.getBearerTokenFrom(request);
-            LOGGER.info("Token: {}", token);
-            if (token != null && tokenService.validateToken(token)) {
-                String username = tokenService.getUsernameFromToken(token);
-                var userDetails = userDetailsService.loadUserByUsername(username);
-                SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+            LOGGER.info("Extracted token: {}", token != null ? "Present (length: " + token.length() + ")" : "Null");
+            
+            if (token != null) {
+                boolean isValid = tokenService.validateToken(token);
+                LOGGER.info("Token validation result: {} for URI: {}", isValid, request.getRequestURI());
+                
+                if (isValid) {
+                    String username = tokenService.getUsernameFromToken(token);
+                    LOGGER.info("Extracted username from token: {}", username);
+                    
+                    try {
+                        var userDetails = userDetailsService.loadUserByUsername(username);
+                        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+                        LOGGER.info("Authentication set successfully for user: {} on URI: {}", username, request.getRequestURI());
+                    } catch (Exception e) {
+                        LOGGER.error("Error loading user details for username '{}' on URI '{}': {}", username, request.getRequestURI(), e.getMessage(), e);
+                        // No continuamos si no podemos cargar el usuario - Spring Security manejará el 401
+                    }
+                } else {
+                    LOGGER.warn("Token validation failed for request to: {}", request.getRequestURI());
+                }
             } else {
-                LOGGER.info("Token is not valid");
+                LOGGER.warn("No token found in request to: {}", request.getRequestURI());
             }
 
         } catch (Exception e) {
-            LOGGER.error("Cannot set user authentication: {}", e.getMessage());
+            LOGGER.error("Cannot set user authentication for URI '{}': {}", request.getRequestURI(), e.getMessage(), e);
         }
         filterChain.doFilter(request, response);
     }

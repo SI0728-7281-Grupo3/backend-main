@@ -4,7 +4,8 @@ import com.metasoft.restyle.platform.agent.domain.model.aggregates.ChatMessage;
 import com.metasoft.restyle.platform.agent.domain.model.aggregates.ChatResponse;
 import com.metasoft.restyle.platform.agent.domain.model.commands.SendMessageCommand;
 import com.metasoft.restyle.platform.agent.interfaces.ChatGateway;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @Service
 public class SendMessageHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SendMessageHandler.class);
     private final ChatGateway chatGateway;
     private final ChatSessionStore chatSessionStore;
 
@@ -21,6 +23,9 @@ public class SendMessageHandler {
     }
 
     public ChatResponse handle(SendMessageCommand command) {
+        LOGGER.info("Received chat request - SessionId: {}, UserName: {}, UserRole: {}, Message: {}", 
+                command.getSessionId(), command.getUserName(), command.getUserRole(), command.getUserMessage());
+        
         ChatMessage userMessage = new ChatMessage("user", command.getUserMessage());
 
         List<ChatMessage> messages = new ArrayList<>();
