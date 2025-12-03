@@ -118,11 +118,13 @@ public class TokenServiceImpl implements BearerTokenService {
         } catch (MalformedJwtException e) {
             LOGGER.error("Invalid JWT token: {}", e.getMessage());
         } catch (ExpiredJwtException e) {
-            LOGGER.error("Expired JWT token: {}", e.getMessage());
+            LOGGER.error("Expired JWT token. Expiration date: {}, Current date: {}", e.getClaims().getExpiration(), new Date());
         } catch (UnsupportedJwtException e) {
             LOGGER.error("Unsupported JWT token: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
             LOGGER.error("JWT claims string is empty: {}", e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error validating token: {}", e.getMessage(), e);
         }
         return false;
     }
