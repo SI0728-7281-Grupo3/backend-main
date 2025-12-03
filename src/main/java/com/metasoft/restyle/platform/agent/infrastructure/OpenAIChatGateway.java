@@ -44,7 +44,7 @@ public class OpenAIChatGateway implements ChatGateway {
 
             Response response = client.responses().create(params);
 
-            // ✅ Extraer el texto correctamente
+            // Extraer el texto correctamente
             StringBuilder outputText = new StringBuilder();
             
             List<ResponseOutputItem> outputs = response.output();
@@ -62,7 +62,7 @@ public class OpenAIChatGateway implements ChatGateway {
                                 Optional<ResponseOutputText> textOpt = content.outputText();
                                 if (textOpt.isPresent()) {
                                     ResponseOutputText text = textOpt.get();
-                                    // ✅ text() devuelve String directamente, no Optional
+                                    // text() devuelve String directamente, no Optional
                                     String textValue = text.text();
                                     if (textValue != null && !textValue.isEmpty()) {
                                         outputText.append(textValue);
